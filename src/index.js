@@ -1,46 +1,55 @@
-'use strict'
+'use strict';
 
-import _ from "lodash";
+import _ from 'lodash';
 import {saveData} from './saveData';
 import {EmployeeWithFixedPayment} from './EmployeeWithFixedPayment';
 import {EmployeeWithTimePayment} from './EmployeeWithTimePayment';
+import {validate} from './validation';
 
-var addFile = document.getElementById("myfileinput");
-var saveInFile = document.getElementById("save");
+var addFile = document.getElementById('myfileinput');
+var saveInFile = document.getElementById('save');
 var display = document.getElementById('tables');
 var employees = [];
-var templ = require("ejs!./templates/empTable.ejs");
-var templIdTable = require("ejs!./templates/empIdTable.ejs");
+var templ = require('ejs!./templates/empTable.ejs');
+var templIdTable = require('ejs!./templates/empIdTable.ejs');
 
-addFile.addEventListener('change', function(e){
+
+addFile.addEventListener('change', function (e) {
     var files = e.target.files;
-    if (files[0].name.lastIndexOf(".json")!=-1){
-
+    if (files[0].name.lastIndexOf('.json') != -1) {
         var reader = new FileReader();
         reader.readAsText(files[0]);
-
         reader.onloadend = function () {
-            employees = JSON.parse(reader.result);
 
-      	    for (var i = 0; i < employees.length; i++) {
-            		if (employees[i].typePayment =="fixed") {
-            		    employees[i] = new EmployeeWithFixedPayment(employees[i]);
-            		} else {
-            		    employees[i] = new EmployeeWithTimePayment(employees[i]);
-            		}
-      	    }
+            let resultValid = validate(reader.result); // проверка данных файла
 
-      	    let sortEmployees =_.sortBy(employees, function(emp) { return [1/(emp.getPayment()), emp.first_name ]; });
+            if (resultValid.valid) { // если файл валиден
+                employees = resultValid.employees;
 
-      	    display.innerHTML = templ( {title: "Список работников", employees: sortEmployees});
-            display.innerHTML+= templ( {title: "Топ 5 работников", employees: sortEmployees.slice(0,5)});
-      	    display.innerHTML+= idTable( {title: "Последние id", employees: sortEmployees.slice(-5)});
-        }
+                for (var i = 0; i < employees.length; i++) { // создаем объекты классов
+                    if (employees[i].typePayment === 'fixed') {
+                        employees[i] = new EmployeeWithFixedPayment(employees[i]);
+                    } else {
+                        employees[i] = new EmployeeWithTimePayment(employees[i]);
+                    }
+                }
+                // сортировка по имени и зп
+                let sortEmployees =_.sortBy(employees, function(emp) { return [1/(emp.getPayment()), emp.first_name ]; });
+
+                // формирование html
+                display.innerHTML = templ( {title: 'Список работников', employees: sortEmployees});
+                display.innerHTML+= templ( {title: 'Топ 5 работников', employees: sortEmployees.slice(0, 5)});
+                display.innerHTML+= templIdTable( {title: 'Последние id', employees: sortEmployees.slice(-5)});
+            } else {
+                alert(resultValid.message); // вывод ошибки при валидации
+            }
+        };
+
     } else {
-      alert("Неверный формат файла!!!");
+        alert('Файл должен быть в формате json');
     }
 });
 
-saveInFile.addEventListener('click', function(e){
-   saveData(employees, 'employees.json');
+saveInFile.addEventListener('click', function(){
+    saveData(employees, 'employees.json');
 });
