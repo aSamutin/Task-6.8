@@ -1,15 +1,15 @@
-'use strict'
+'use strict';
 
 import {Employee} from './employee';
 
-class EmployeeWithTimePayment extends Employee{
-    constructor(employee){
+class EmployeeWithTimePayment extends Employee {
+    constructor (employee) {
         super(employee);
-        this.typePayment = "time";
+        this.typePayment = 'time';
     }
-    getPayment(){
+    getPayment () {
         return 20.8 * 8 * this.rate;
     }
-};
+}
 
 export {EmployeeWithTimePayment};
